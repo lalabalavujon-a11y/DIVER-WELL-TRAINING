@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Track {
+  id        String   @id @default(cuid())
+  title     String
+  slug      String   @unique
+  summary   String?
+  createdAt DateTime @default(now())
+  lessons   Lesson[]
+}
+
+model Lesson {
+  id        String   @id @default(cuid())
+  trackId   String
+  title     String
+  order     Int      @default(0)
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  quiz  Quiz?
+}
+
+model Quiz {
+  id        String     @id @default(cuid())
+  lessonId  String     @unique
+  title     String
+  questions Question[]
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  attempts Attempt[]
+}
+
+model Question {
+  id     String @id @default(cuid())
+  quizId String
+  prompt String
+  a      String
+  b      String
+  c      String
+  d      String
+  answer String
+
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+}
+
+model Attempt {
+  id        String   @id @default(cuid())
+  userId    String
+  quizId    String
+  score     Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  password  String
+  role      Role       @default(USER)
+  name      String?
+  createdAt DateTime   @default(now())
+  attempts  Attempt[]
+}
